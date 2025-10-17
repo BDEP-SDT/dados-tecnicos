@@ -33,7 +33,9 @@
   <div class="msg" id="msg"></div>
 
   <script>
-    const WORKER_URL = "https://SEU_WORKER_SUBDOMINIO.workers.dev"; // substitua depois
+    const GITHUB_API_URL = "https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/actions/workflows/salvar_envio.yml/dispatches";
+    const TOKEN = "ghp_TOKEN";
+
 
     document.getElementById('formulario').addEventListener('submit', async (e) => {
       e.preventDefault();
