@@ -52,33 +52,42 @@
   </form>
 
   <script>
-    const GITHUB_API_URL = "https://api.github.com/repos/BDEP-SDT/dados-tecnicos/dispatches";
+    const GITHUB_API_URL = "https://api.github.com/repos/BDEP-SDT/dados-tecnicos/actions/workflows/salvar_envio.yml/dispatches";
 
     document.getElementById("formulario").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const dados = {
-        nome: document.getElementById("nome").value,
-        email: document.getElementById("email").value,
-        descricao: document.getElementById("descricao").value,
-      };
+      const nome = document.getElementById("nome").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const descricao = document.getElementById("descricao").value.trim();
 
-      const response = await fetch(GITHUB_API_URL, {
-        method: "POST",
-        headers: {
-          "Accept": "application/vnd.github+json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          event_type: "novo_envio",
-          client_payload: dados
-        })
-      });
+      document.getElementById("mensagem").textContent = "⏳ Enviando...";
 
-      if (response.ok) {
-        document.getElementById("mensagem").textContent = "✅ Enviado com sucesso!";
-      } else {
-        document.getElementById("mensagem").textContent = "❌ Falha no envio.";
+      try {
+        const response = await fetch(GITHUB_API_URL, {
+          method: "POST",
+          headers: {
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer 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", // ⚠️ SUBSTITUA por seu token temporário para teste local
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ref: "main",
+            inputs: { nome, email, descricao }
+          }),
+        });
+
+        if (response.ok) {
+          document.getElementById("mensagem").textContent = "✅ Enviado com sucesso!";
+          document.getElementById("formulario").reset();
+        } else {
+          const erro = await response.text();
+          console.error(erro);
+          document.getElementById("mensagem").textContent = "❌ Falha no envio.";
+        }
+      } catch (error) {
+        console.error(error);
+        document.getElementById("mensagem").textContent = "❌ Erro de conexão.";
       }
     });
   </script>
