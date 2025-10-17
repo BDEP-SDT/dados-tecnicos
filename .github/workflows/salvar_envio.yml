@@ -1,4 +1,4 @@
-name: Salvar Envio de Formulário
+name: Salvar envio
 
 on:
   repository_dispatch:
@@ -8,13 +8,13 @@ jobs:
   salvar:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
+      - name: Clonar repositório
         uses: actions/checkout@v4
 
       - name: Criar pasta de dados
         run: mkdir -p data
 
-      - name: Criar JSON com dados recebidos
+      - name: Salvar JSON recebido
         run: |
           echo '${{ toJson(github.event.client_payload) }}' > data/envio-${{ github.run_id }}.json
 
@@ -25,5 +25,3 @@ jobs:
           git add data/
           git commit -m "Novo envio via formulário"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.BDEP_TOKEN }}
