@@ -1,93 +1,39 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Envio de Dados Técnicos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
-      padding: 20px;
-      border-radius: 10px;
-      background: #f9f9f9;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    input, textarea, button {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background-color: #0366d6;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #024a9c;
-    }
-  </style>
-</head>
-<body>
-  <h2>Formulário de Envio de Dados Técnicos</h2>
-  <form id="formulario">
-    <label>Nome:</label>
-    <input type="text" id="nome" required />
+<script>
+  const GITHUB_API_URL = "https://api.github.com/repos/BDEP-SDT/dados-tecnicos/dispatches";
+  const TOKEN = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // Seu token pessoal com permissão de 'repo'
 
-    <label>E-mail:</label>
-    <input type="email" id="email" required />
+  document.getElementById("formulario").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    <label>Descrição:</label>
-    <textarea id="descricao" rows="4"></textarea>
+    const dados = {
+      nome: document.getElementById("nome").value,
+      email: document.getElementById("email").value,
+      descricao: document.getElementById("descricao").value,
+    };
 
-    <button type="submit">Enviar</button>
-  </form>
+    try {
+      const response = await fetch(GITHUB_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${TOKEN}`,
+          "Accept": "application/vnd.github+json",
+        },
+        body: JSON.stringify({
+          event_type: "novo_envio",
+          client_payload: dados,
+        }),
+      });
 
-  <p id="mensagem"></p>
-
-  <script>
-    const GITHUB_API_URL = "https://api.github.com/repos/BDEP-SDT/dados-tecnicos/dispatches";
-
-    document.getElementById("formulario").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const dados = {
-        nome: document.getElementById("nome").value,
-        email: document.getElementById("email").value,
-        descricao: document.getElementById("descricao").value,
-      };
-
-      try {
-        const response = await fetch(GITHUB_API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            event_type: "novo_envio",
-            client_payload: dados,
-          }),
-        });
-
-        if (response.ok) {
-          document.getElementById("mensagem").textContent =
-            "✅ Envio registrado! Aguarde o processamento.";
-        } else {
-          document.getElementById("mensagem").textContent =
-            "❌ Falha no envio. Verifique o console.";
-          console.error(await response.text());
-        }
-      } catch (erro) {
-        document.getElementById("mensagem").textContent =
-          "❌ Erro ao conectar com o GitHub API.";
-        console.error(erro);
+      if (response.ok) {
+        document.getElementById("mensagem").textContent = "✅ Envio registrado!";
+      } else {
+        const texto = await response.text();
+        document.getElementById("mensagem").textContent = "❌ Falha no envio.";
+        console.error("Erro:", texto);
       }
-    });
-  </script>
-</body>
-</html>
+    } catch (erro) {
+      document.getElementById("mensagem").textContent = "❌ Erro de conexão.";
+      console.error(erro);
+    }
+  });
+</script>
