@@ -1,36 +1,42 @@
-name: Salvar envio de formulário
+name: Salvar envio do formulário
 
 on:
-  repository_dispatch:
-    types: [novo_envio]
+  workflow_dispatch:
+    inputs:
+      nome:
+        description: "Nome do remetente"
+        required: true
+      email:
+        description: "E-mail"
+        required: true
+      descricao:
+        description: "Descrição"
+        required: true
 
 jobs:
   salvar:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout do repositório
         uses: actions/checkout@v4
 
-      - name: Adicionar dados no arquivo
+      - name: Adicionar dados ao arquivo
         run: |
-          echo "Adicionando dados recebidos..."
           mkdir -p dados
-          arquivo="dados/envios.json"
-          payload=$(jq -n --arg nome "${{ github.event.client_payload.nome }}" \
-                         --arg email "${{ github.event.client_payload.email }}" \
-                         --arg descricao "${{ github.event.client_payload.descricao }}" \
-                         '{nome: $nome, email: $email, descricao: $descricao, data: now | strftime("%Y-%m-%d %H:%M:%S")}')
-          if [ -f "$arquivo" ]; then
-            jq ". += [$payload]" "$arquivo" > temp.json && mv temp.json "$arquivo"
-          else
-            echo "[$payload]" > "$arquivo"
+          FILE=dados/envios.json
+          if [ ! -f "$FILE" ]; then
+            echo "[]" > $FILE
           fi
+          jq --arg nome "${{ github.event.inputs.nome }}" \
+             --arg email "${{ github.event.inputs.email }}" \
+             --arg descricao "${{ github.event.inputs.descricao }}" \
+             '. += [{"nome": $nome, "email": $email, "descricao": $descricao, "data": "'$(date -u)'"}]' $FILE > tmp.json
+          mv tmp.json $FILE
 
-      - name: Commit e Push
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "📩 Novo envio via formulário"
-          file_pattern: dados/envios.json
-          branch: main
-        env:
-          GITHUB_TOKEN: ${{ secrets.BDEP_TOKEN }}
+      - name: Commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dados/envios.json
+          git commit -m "Novo envio via formulário"
+          git push
