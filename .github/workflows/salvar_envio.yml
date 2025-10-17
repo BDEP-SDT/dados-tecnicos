@@ -1,31 +1,29 @@
-<script>
-  const GITHUB_API_URL = "https://api.github.com/repos/BDEP-SDT/dados-tecnicos/dispatches";
+name: Salvar Envio de Formulário
 
-  document.getElementById("formulario").addEventListener("submit", async (e) => {
-    e.preventDefault();
+on:
+  repository_dispatch:
+    types: [novo_envio]
 
-    const dados = {
-      nome: document.getElementById("nome").value,
-      email: document.getElementById("email").value,
-      descricao: document.getElementById("descricao").value,
-    };
+jobs:
+  salvar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
-    const response = await fetch(GITHUB_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        event_type: "novo_envio",
-        client_payload: dados
-      }),
-    });
+      - name: Criar pasta de dados
+        run: mkdir -p data
 
-    if (response.ok) {
-      document.getElementById("mensagem").textContent = "✅ Envio registrado! Aguarde processamento.";
-    } else {
-      document.getElementById("mensagem").textContent = "❌ Falha no envio. Verifique o console.";
-      console.error(await response.text());
-    }
-  });
-</script>
+      - name: Criar JSON com dados recebidos
+        run: |
+          echo '${{ toJson(github.event.client_payload) }}' > data/envio-${{ github.run_id }}.json
+
+      - name: Fazer commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Novo envio via formulário"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.BDEP_TOKEN }}
