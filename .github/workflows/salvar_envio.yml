@@ -1,0 +1,43 @@
+name: Salvar Envio de Formulário
+
+on:
+  workflow_dispatch:
+    inputs:
+      nome:
+        description: 'Nome do usuário'
+        required: true
+      email:
+        description: 'E-mail do usuário'
+        required: true
+      descricao:
+        description: 'Descrição ou mensagem'
+        required: false
+      dataEnvio:
+        description: 'Data ISO do envio'
+        required: true
+
+jobs:
+  salvar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Criar arquivo JSON
+        run: |
+          mkdir -p data/envios
+          FILE="data/envios/${{ github.event.inputs.email }}_$(date +%s).json"
+          echo '{
+            "nome": "${{ github.event.inputs.nome }}",
+            "email": "${{ github.event.inputs.email }}",
+            "descricao": "${{ github.event.inputs.descricao }}",
+            "dataEnvio": "${{ github.event.inputs.dataEnvio }}"
+          }' > "$FILE"
+
+      - name: Commit e push do arquivo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/envios/
+          git commit -m "Novo envio de formulário - ${{ github.event.inputs.email }}"
+          git push
