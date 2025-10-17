@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Acompanhamento de Envios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; }
+    input { width: 100%; padding: 8px; margin-top: 8px; }
+    button { margin-top: 10px; padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background-color: #1e7e34; }
+    .card { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 15px; }
+    .link { color: #007bff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h2>📦 Acompanhamento de Envios</h2>
+  <p>Digite seu e-mail para visualizar seus envios registrados.</p>
+
+  <input type="email" id="email" placeholder="seuemail@exemplo.com" required>
+  <button onclick="buscar()">Buscar meus envios</button>
+
+  <div id="resultados"></div>
+
+  <script>
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/data/envios/";
+
+    async function buscar() {
+      const email = document.getElementById('email').value.trim();
+      const resultados = document.getElementById('resultados');
+      resultados.innerHTML = "🔍 Buscando seus envios...";
+
+      try {
+        const res = await fetch(`https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/contents/data/envios`);
+        const arquivos = await res.json();
+
+        const envios = [];
+        for (const item of arquivos) {
+          const conteudo = await fetch(item.download_url).then(r => r.json());
+          if (conteudo.email === email) envios.push(conteudo);
+        }
+
+        if (envios.length === 0) {
+          resultados.innerHTML = "❌ Nenhum envio encontrado.";
+          return;
+        }
+
+        resultados.innerHTML = "";
+        envios.forEach(envio => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <strong>Nome:</strong> ${envio.nome}<br>
+            <strong>Descrição:</strong> ${envio.descricao}<br>
+            <strong>Data:</strong> ${new Date(envio.dataEnvio).toLocaleString()}<br>
+            ${envio.uploadLink ? `<a class="link" href="${envio.uploadLink}" target="_blank">📁 Link de Upload</a>` : `<em>Aguardando processamento...</em>`}
+          `;
+          resultados.appendChild(card);
+        });
+
+      } catch (err) {
+        resultados.innerHTML = "⚠️ Erro ao buscar dados: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
