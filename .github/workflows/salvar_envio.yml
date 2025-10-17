@@ -1,4 +1,4 @@
-name: Salvar envio
+name: Salvar envio de formulário
 
 on:
   repository_dispatch:
@@ -8,20 +8,29 @@ jobs:
   salvar:
     runs-on: ubuntu-latest
     steps:
-      - name: Clonar repositório
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Criar pasta de dados
-        run: mkdir -p data
-
-      - name: Salvar JSON recebido
+      - name: Adicionar dados no arquivo
         run: |
-          echo '${{ toJson(github.event.client_payload) }}' > data/envio-${{ github.run_id }}.json
+          echo "Adicionando dados recebidos..."
+          mkdir -p dados
+          arquivo="dados/envios.json"
+          payload=$(jq -n --arg nome "${{ github.event.client_payload.nome }}" \
+                         --arg email "${{ github.event.client_payload.email }}" \
+                         --arg descricao "${{ github.event.client_payload.descricao }}" \
+                         '{nome: $nome, email: $email, descricao: $descricao, data: now | strftime("%Y-%m-%d %H:%M:%S")}')
+          if [ -f "$arquivo" ]; then
+            jq ". += [$payload]" "$arquivo" > temp.json && mv temp.json "$arquivo"
+          else
+            echo "[$payload]" > "$arquivo"
+          fi
 
-      - name: Fazer commit e push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git commit -m "Novo envio via formulário"
-          git push
+      - name: Commit e Push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📩 Novo envio via formulário"
+          file_pattern: dados/envios.json
+          branch: main
+        env:
+          GITHUB_TOKEN: ${{ secrets.BDEP_TOKEN }}
